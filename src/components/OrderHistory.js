@@ -7,7 +7,7 @@ function OrderHistory() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -19,19 +19,12 @@ function OrderHistory() {
     try {
       setLoading(true);
       setError('');
-      console.log('OrderHistory: Loading orders...');
-
       const response = await orderService.getUserOrders();
-      console.log('OrderHistory: Orders response:', response);
-
-      // Убедимся, что response - это массив
       const ordersArray = Array.isArray(response) ? response : [];
       setOrders(ordersArray);
-
     } catch (error) {
-      console.error('OrderHistory: Error loading orders:', error);
       setError(error.message || 'Ошибка при загрузке заказов');
-      setOrders([]); // Устанавливаем пустой массив в случае ошибки
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -52,75 +45,26 @@ function OrderHistory() {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status?.toUpperCase()) {
-      case 'COMPLETED':
-        return '#00ff88';
-      case 'PROCESSING':
-        return '#ffaa00';
-      case 'PENDING':
-        return '#ffaa00';
-      case 'CANCELLED':
-        return '#ff4444';
-      default:
-        return '#cccccc';
-    }
-  };
-
   const getStatusText = (status) => {
     switch (status?.toUpperCase()) {
-      case 'COMPLETED':
-        return 'Завершен';
-      case 'PROCESSING':
-        return 'В обработке';
-      case 'PENDING':
-        return 'Ожидание';
-      case 'CANCELLED':
-        return 'Отменен';
-      default:
-        return status;
+      case 'COMPLETED': return 'Завершен';
+      case 'PROCESSING': return 'В обработке';
+      case 'PENDING': return 'Ожидание';
+      case 'CANCELLED': return 'Отменен';
+      default: return status;
     }
   };
 
   if (!isAuthenticated()) {
     return (
       <div className="container">
-        <div className="text-center" style={{ padding: '4rem 1rem' }}>
-          <div className="card" style={{ maxWidth: '500px', margin: '0 auto', padding: '3rem 2rem' }}>
+        <div className="text-center padding-y-4">
+          <div className="card max-w-500 mx-auto padding-3">
             <h2>Доступ запрещен</h2>
-            <p style={{ color: '#cccccc' }}>Пожалуйста, войдите в систему для просмотра заказов.</p>
+            <p className="text-muted">Пожалуйста, войдите в систему для просмотра заказов.</p>
             <Link to="/login" className="btn mt-2">
               Войти в систему
             </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="container">
-        <div className="text-center" style={{ padding: '4rem 1rem' }}>
-          <div className="card" style={{ maxWidth: '500px', margin: '0 auto', padding: '3rem 2rem' }}>
-            <h3>Загрузка заказов...</h3>
-            <p style={{ color: '#cccccc' }}>Пожалуйста, подождите</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container">
-        <div className="text-center">
-          <div className="card" style={{ maxWidth: '500px', margin: '2rem auto', padding: '2rem' }}>
-            <h3 className="mb-2">Ошибка</h3>
-            <p className="mb-3" style={{ color: '#cccccc' }}>{error}</p>
-            <button onClick={loadOrders} className="btn">
-              Попробовать снова
-            </button>
           </div>
         </div>
       </div>
@@ -131,155 +75,96 @@ function OrderHistory() {
     <div className="container">
       <div className="text-center mb-4">
         <h1>История заказов</h1>
-        <p style={{ color: '#cccccc' }}>Ваши покупки в ZenGame</p>
+        <p className="text-muted">Ваши покупки в ZenGame</p>
       </div>
 
-      {orders.length === 0 && (
+      <div className="user-profile">
+        <div className="user-avatar">
+          <span className="material-icons">person</span>
+        </div>
+        <div className="user-info">
+          <h3>{user?.username}</h3>
+          <p>{user?.email}</p>
+        </div>
+      </div>
+
+      <div className="refresh-btn text-center mb-4">
+        <button onClick={loadOrders} className="btn btn-secondary" disabled={loading}>
+          {loading ? 'Обновление...' : 'Обновить список'}
+        </button>
+      </div>
+
+      {loading ? (
         <div className="text-center">
-          <div className="card" style={{ maxWidth: '500px', margin: '2rem auto', padding: '3rem 2rem' }}>
+          <p>Загрузка заказов...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center">
+          <div className="card max-w-500 mx-auto my-2 padding-2">
+            <h3 className="mb-2">Ошибка</h3>
+            <p className="mb-3 text-muted">{error}</p>
+            <button onClick={loadOrders} className="btn">
+              Попробовать снова
+            </button>
+          </div>
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="text-center">
+          <div className="card max-w-500 mx-auto my-2 padding-3">
             <h3 className="mb-2">Заказов пока нет</h3>
-            <p className="mb-3" style={{ color: '#cccccc' }}>
-              Начните покупки в нашем каталоге игр!
-            </p>
             <Link to="/games" className="btn">
               Перейти к играм
             </Link>
           </div>
         </div>
-      )}
-
-      {orders.length > 0 && (
+      ) : (
         <div className="orders-list">
           {orders.map(order => (
-            <div key={order.id} className="card mb-4">
-              <div className="card-header" style={{
-                background: 'rgba(255,255,255,0.05)',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                padding: '1.5rem'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  flexWrap: 'wrap',
-                  gap: '1rem'
-                }}>
+            <div key={order.id} className="card order-card">
+              <img
+                src={order.items?.[0]?.imageUrl || '/default-game.jpg'}
+                alt={order.items?.[0]?.gameTitle || 'Game'}
+                className="order-image"
+              />
+              <div className="order-info">
+                <div className="order-header">
                   <div>
-                    <h3 style={{ margin: 0, color: '#00ff88' }}>Заказ #{order.id}</h3>
-                    <p style={{ margin: '0.5rem 0 0 0', color: '#cccccc', fontSize: '0.9rem' }}>
+                    <h3 className="order-id">Заказ #{order.id}</h3>
+                    <p className="order-date text-muted">
                       {formatDate(order.orderDate)}
                     </p>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span
-                      style={{
-                        backgroundColor: getStatusColor(order.status),
-                        padding: '0.5rem 1rem',
-                        borderRadius: '20px',
-                        color: 'white',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold',
-                        display: 'inline-block',
-                        marginBottom: '0.5rem'
-                      }}
-                    >
-                      {getStatusText(order.status)}
-                    </span>
-                    <div style={{ color: '#00ff88', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                      ${order.totalAmount?.toFixed(2) || '0.00'}
-                    </div>
-                  </div>
+                  <span className="order-status">
+                    {getStatusText(order.status)}
+                  </span>
                 </div>
-              </div>
 
-              <div className="card-body" style={{ padding: '1.5rem' }}>
-                <h4 style={{ color: '#ffffff', marginBottom: '1rem' }}>Состав заказа:</h4>
-                {order.items && order.items.length > 0 ? (
-                  <div className="order-items">
-                    {order.items.map((item, index) => (
-                      <div key={index} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '1rem 0',
-                        borderBottom: '1px solid rgba(255,255,255,0.1)',
-                        gap: '1rem'
-                      }}>
-                        <img
-                          src={item.imageUrl || '/default-game.jpg'}
-                          alt={item.gameTitle}
-                          style={{
-                            width: '60px',
-                            height: '60px',
-                            objectFit: 'cover',
-                            borderRadius: '8px'
-                          }}
-                        />
-                        <div style={{ flex: 1 }}>
-                          <h5 style={{ margin: '0 0 0.5rem 0', color: '#ffffff' }}>
-                            {item.gameTitle}
-                          </h5>
-                          {item.platform && (
-                            <p style={{ margin: 0, color: '#888', fontSize: '0.8rem' }}>
-                              {item.platform}
-                            </p>
-                          )}
+                <div className="order-items">
+                  <h4 className="mb-2">Состав заказа:</h4>
+                  {order.items && order.items.length > 0 ? (
+                    order.items.map((item, index) => (
+                      <div key={index} className="order-item">
+                        <div>
+                          <strong>{item.gameTitle}</strong>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ color: '#00ff88', fontWeight: 'bold', fontSize: '1rem' }}>
-                            ${item.priceAtPurchase?.toFixed(2) || '0.00'}
-                          </div>
-                          <div style={{ color: '#cccccc', fontSize: '0.9rem' }}>
-                            {item.quantity} × ${item.priceAtPurchase?.toFixed(2) || '0.00'}
-                          </div>
-                          <div style={{ color: '#888', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                            Итого: ${((item.quantity || 0) * (item.priceAtPurchase || 0)).toFixed(2)}
-                          </div>
+                        <div className="text-primary">
+                          ${item.priceAtPurchase?.toFixed(2) || '0.00'}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{ color: '#888', textAlign: 'center', padding: '1rem' }}>
-                    Нет информации о товарах
-                  </p>
-                )}
+                    ))
+                  ) : (
+                    <p className="text-muted">Нет информации о товарах</p>
+                  )}
+                </div>
+
+                <div className="order-total mt-3 text-right">
+                  <strong>Итого: ${order.totalAmount?.toFixed(2) || '0.00'}</strong>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
-
-      {orders.length > 0 && (
-        <div className="text-center" style={{ marginTop: '2rem' }}>
-          <button
-            onClick={loadOrders}
-            className="btn btn-secondary"
-            disabled={loading}
-          >
-            {loading ? 'Обновление...' : 'Обновить список'}
-          </button>
-        </div>
-      )}
-
-      <style jsx>{`
-        .orders-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-
-        @media (max-width: 768px) {
-          .card-header > div {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-
-          .card-header > div > div:last-child {
-            text-align: left;
-            width: 100%;
-          }
-        }
-      `}</style>
     </div>
   );
 }

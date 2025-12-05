@@ -15,19 +15,15 @@ function GameFormModal({ isOpen, onClose, onSave, game = null, loading = false }
   });
   const [selectedGenre, setSelectedGenre] = useState('');
 
-  // Жанры для выбора
   const availableGenres = [
     'ACTION', 'RPG', 'STRATEGY', 'ADVENTURE', 'SIMULATION', 'SPORTS',
     'RACING', 'HORROR', 'PUZZLE', 'FIGHTING', 'SHOOTER', 'INDIE'
   ];
 
-  // Платформы для выбора
   const platforms = ['PC', 'PLAYSTATION', 'XBOX', 'NINTENDO', 'MOBILE'];
 
-  // Инициализация формы при открытии или изменении игры
   useEffect(() => {
     if (game) {
-      // Режим редактирования
       setFormData({
         title: game.title || '',
         description: game.description || '',
@@ -41,7 +37,6 @@ function GameFormModal({ isOpen, onClose, onSave, game = null, loading = false }
         genres: game.genres || []
       });
     } else {
-      // Режим создания
       setFormData({
         title: '',
         description: '',
@@ -77,8 +72,7 @@ function GameFormModal({ isOpen, onClose, onSave, game = null, loading = false }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Валидация
+
     if (!formData.title.trim()) {
       alert('Пожалуйста, введите название игры');
       return;
@@ -92,7 +86,6 @@ function GameFormModal({ isOpen, onClose, onSave, game = null, loading = false }
       return;
     }
 
-    // Подготовка данных
     const submitData = {
       ...formData,
       price: parseFloat(formData.price),
@@ -100,65 +93,31 @@ function GameFormModal({ isOpen, onClose, onSave, game = null, loading = false }
       genres: formData.genres
     };
 
-    console.log('Submitting game data:', submitData);
     onSave(submitData);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000
-    }}>
-      <div className="modal-content" style={{
-        background: 'var(--card-dark)',
-        borderRadius: 'var(--border-radius)',
-        padding: '2rem',
-        width: '90%',
-        maxWidth: '600px',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '1.5rem'
-        }}>
-          <h2 style={{ color: '#00ff88', margin: 0 }}>
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>
             {game ? 'Редактировать игру' : 'Добавить новую игру'}
           </h2>
           <button
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#cccccc',
-              fontSize: '1.5rem',
-              cursor: 'pointer'
-            }}
+            className="modal-close"
           >
             ×
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Основная информация */}
-          <div className="form-section" style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ color: '#00ff88', marginBottom: '1rem' }}>Основная информация</h3>
-            
-            <div className="form-group" style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cccccc' }}>
+          <div className="form-section">
+            <h3>Основная информация</h3>
+            <div className="form-group mb-3">
+              <label className="form-label">
                 Название игры *
               </label>
               <input
@@ -166,20 +125,12 @@ function GameFormModal({ isOpen, onClose, onSave, game = null, loading = false }
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
                 required
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '2px solid #333',
-                  borderRadius: 'var(--border-radius)',
-                  background: '#2a2a2a',
-                  color: 'var(--text-light)'
-                }}
+                className="form-input"
                 placeholder="Введите название игры"
               />
             </div>
-
-            <div className="form-group" style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cccccc' }}>
+            <div className="form-group mb-3">
+              <label className="form-label">
                 Описание *
               </label>
               <textarea
@@ -187,27 +138,17 @@ function GameFormModal({ isOpen, onClose, onSave, game = null, loading = false }
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
                 required
                 rows="4"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '2px solid #333',
-                  borderRadius: 'var(--border-radius)',
-                  background: '#2a2a2a',
-                  color: 'var(--text-light)',
-                  resize: 'vertical'
-                }}
+                className="form-input form-textarea"
                 placeholder="Опишите игру"
               />
             </div>
           </div>
 
-          {/* Цены */}
-          <div className="form-section" style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ color: '#00ff88', marginBottom: '1rem' }}>Цены</h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-section">
+            <h3>Цены</h3>
+            <div className="form-grid mb-3">
               <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cccccc' }}>
+                <label className="form-label">
                   Цена ($) *
                 </label>
                 <input
@@ -217,20 +158,12 @@ function GameFormModal({ isOpen, onClose, onSave, game = null, loading = false }
                   value={formData.price}
                   onChange={(e) => setFormData({...formData, price: e.target.value})}
                   required
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #333',
-                    borderRadius: 'var(--border-radius)',
-                    background: '#2a2a2a',
-                    color: 'var(--text-light)'
-                  }}
+                  className="form-input"
                   placeholder="0.00"
                 />
               </div>
-
               <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cccccc' }}>
+                <label className="form-label">
                   Цена со скидкой ($)
                 </label>
                 <input
@@ -239,160 +172,66 @@ function GameFormModal({ isOpen, onClose, onSave, game = null, loading = false }
                   min="0"
                   value={formData.discountPrice}
                   onChange={(e) => setFormData({...formData, discountPrice: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #333',
-                    borderRadius: 'var(--border-radius)',
-                    background: '#2a2a2a',
-                    color: 'var(--text-light)'
-                  }}
+                  className="form-input"
                   placeholder="0.00 (опционально)"
                 />
               </div>
             </div>
           </div>
 
-          {/* Детали */}
-          <div className="form-section" style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ color: '#00ff88', marginBottom: '1rem' }}>Детали</h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+          <div className="form-section">
+            <h3>Детали</h3>
+            <div className="form-grid mb-3">
               <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cccccc' }}>
-                  Разработчик
-                </label>
-                <input
-                  type="text"
-                  value={formData.developer}
-                  onChange={(e) => setFormData({...formData, developer: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #333',
-                    borderRadius: 'var(--border-radius)',
-                    background: '#2a2a2a',
-                    color: 'var(--text-light)'
-                  }}
-                  placeholder="Название разработчика"
-                />
-              </div>
-
-              <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cccccc' }}>
-                  Издатель
-                </label>
-                <input
-                  type="text"
-                  value={formData.publisher}
-                  onChange={(e) => setFormData({...formData, publisher: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #333',
-                    borderRadius: 'var(--border-radius)',
-                    background: '#2a2a2a',
-                    color: 'var(--text-light)'
-                  }}
-                  placeholder="Название издателя"
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cccccc' }}>
-                  Дата выхода
-                </label>
-                <input
-                  type="date"
-                  value={formData.releaseDate}
-                  onChange={(e) => setFormData({...formData, releaseDate: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #333',
-                    borderRadius: 'var(--border-radius)',
-                    background: '#2a2a2a',
-                    color: 'var(--text-light)'
-                  }}
-                />
-              </div>
-
-              <div className="form-group">
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cccccc' }}>
+                <label className="form-label">
                   Платформа *
                 </label>
                 <select
                   value={formData.platform}
                   onChange={(e) => setFormData({...formData, platform: e.target.value})}
                   required
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #333',
-                    borderRadius: 'var(--border-radius)',
-                    background: '#2a2a2a',
-                    color: 'var(--text-light)'
-                  }}
+                  className="form-input"
                 >
                   {platforms.map(platform => (
                     <option key={platform} value={platform}>{platform}</option>
                   ))}
                 </select>
               </div>
+              <div className="form-group">
+                <label className="form-label">
+                  Дата выхода
+                </label>
+                <input
+                  type="date"
+                  value={formData.releaseDate}
+                  onChange={(e) => setFormData({...formData, releaseDate: e.target.value})}
+                  className="form-input"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Жанры */}
-          <div className="form-section" style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ color: '#00ff88', marginBottom: '1rem' }}>Жанры *</h3>
-            
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <div className="form-section">
+            <h3>Жанры *</h3>
+            <div className="genres-list mb-2">
               {formData.genres.map(genre => (
-                <span
-                  key={genre}
-                  style={{
-                    background: 'rgba(0, 255, 136, 0.2)',
-                    color: '#00ff88',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '20px',
-                    fontSize: '0.8rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}
-                >
+                <span key={genre} className="genre-tag">
                   {genre}
                   <button
                     type="button"
                     onClick={() => handleRemoveGenre(genre)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#ff4444',
-                      cursor: 'pointer',
-                      fontSize: '1rem'
-                    }}
+                    className="genre-remove"
                   >
                     ×
                   </button>
                 </span>
               ))}
             </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="genre-selector">
               <select
                 value={selectedGenre}
                 onChange={(e) => setSelectedGenre(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  border: '2px solid #333',
-                  borderRadius: 'var(--border-radius)',
-                  background: '#2a2a2a',
-                  color: 'var(--text-light)'
-                }}
+                className="form-input"
               >
                 <option value="">Выберите жанр</option>
                 {availableGenres.map(genre => (
@@ -404,40 +243,29 @@ function GameFormModal({ isOpen, onClose, onSave, game = null, loading = false }
                 onClick={handleAddGenre}
                 className="btn btn-secondary"
                 disabled={!selectedGenre}
-                style={{ whiteSpace: 'nowrap' }}
               >
                 Добавить жанр
               </button>
             </div>
           </div>
 
-          {/* Изображение */}
-          <div className="form-section" style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ color: '#00ff88', marginBottom: '1rem' }}>Изображение</h3>
-            
+          <div className="form-section">
+            <h3>Изображение</h3>
             <div className="form-group">
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#cccccc' }}>
+              <label className="form-label">
                 URL изображения
               </label>
               <input
                 type="url"
                 value={formData.imageUrl}
                 onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '2px solid #333',
-                  borderRadius: 'var(--border-radius)',
-                  background: '#2a2a2a',
-                  color: 'var(--text-light)'
-                }}
+                className="form-input"
                 placeholder="https://example.com/image.jpg"
               />
             </div>
           </div>
 
-          {/* Кнопки */}
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+          <div className="modal-actions">
             <button
               type="button"
               onClick={onClose}
@@ -448,7 +276,7 @@ function GameFormModal({ isOpen, onClose, onSave, game = null, loading = false }
             </button>
             <button
               type="submit"
-              className="btn"
+              className="btn btn-filled"
               disabled={loading}
             >
               {loading ? 'Сохранение...' : (game ? 'Обновить игру' : 'Создать игру')}

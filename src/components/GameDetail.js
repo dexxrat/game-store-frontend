@@ -22,8 +22,7 @@ function GameDetail() {
       const gameData = await gameService.getGameById(id);
       setGame(gameData);
     } catch (error) {
-      console.error('Error loading game:', error);
-      setError('Игра не найдена или произошла ошибка загрузки.');
+      setError('Игра не найдена.');
     } finally {
       setLoading(false);
     }
@@ -36,17 +35,11 @@ function GameDetail() {
   const handleAddToCart = async () => {
     if (!game) return;
 
-    if (!isAuthenticated) {
-      alert('Пожалуйста, войдите в систему для добавления в корзину');
-      return;
-    }
-
     setAddingToCart(true);
     try {
       await addToCart(game);
       alert('Игра добавлена в корзину!');
     } catch (error) {
-      console.error('Error adding to cart:', error);
       alert(error.message || 'Ошибка при добавлении в корзину');
     } finally {
       setAddingToCart(false);
@@ -63,13 +56,32 @@ function GameDetail() {
 
   const isGameInCart = isInCart(game?.id);
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Не указана';
+    try {
+      return new Date(dateString).toLocaleDateString('ru-RU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  const getGenresText = () => {
+    if (game?.genres && Array.isArray(game.genres)) {
+      return game.genres.join(', ');
+    }
+    return game?.genre || 'Не указаны';
+  };
+
   if (loading) {
     return (
       <div className="container">
         <div className="loading">
           <div className="text-center">
             <h3>Загрузка игры...</h3>
-            <p style={{ color: '#cccccc' }}>Пожалуйста, подождите</p>
           </div>
         </div>
       </div>
@@ -80,12 +92,12 @@ function GameDetail() {
     return (
       <div className="container">
         <div className="text-center">
-          <div className="card" style={{ maxWidth: '500px', margin: '2rem auto' }}>
+          <div className="card max-w-500 mx-auto my-2">
             <h3 className="mb-2">Ошибка</h3>
-            <p className="mb-3" style={{ color: '#cccccc' }}>
+            <p className="mb-3 text-muted">
               {error || 'Игра не найдена'}
             </p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div className="flex-center gap-1">
               <button onClick={handleBack} className="btn btn-secondary">
                 Назад
               </button>
@@ -101,13 +113,15 @@ function GameDetail() {
 
   return (
     <div className="container">
-      <button onClick={handleBack} className="btn btn-secondary mb-4">
-        ← Назад к каталогу
+      <button onClick={handleBack} className="btn-back">
+        <span className="material-icons">arrow_back</span>
+        Назад к каталогу
       </button>
 
       <div className="game-detail-grid">
+        {/* Левая часть - изображение */}
         <div className="game-detail-image-section">
-          <div className="card" style={{ position: 'relative' }}>
+          <div className="card image-container">
             <img
               src={imageError ? '/default-game.jpg' : (game.imageUrl || '/default-game.jpg')}
               alt={game.title}
@@ -122,6 +136,7 @@ function GameDetail() {
           </div>
         </div>
 
+        {/* Правая часть - информация */}
         <div className="game-detail-info-section">
           <div className="card">
             <h1 className="game-detail-title">{game.title}</h1>
@@ -131,17 +146,22 @@ function GameDetail() {
             </p>
 
             <div className="game-detail-meta">
-              {game.genre && (
+              <div className="meta-item">
+                <strong>Жанр:</strong>
+                <span>{getGenresText()}</span>
+              </div>
+
+              {game.releaseDate && (
                 <div className="meta-item">
-                  <strong>Жанр:</strong>
-                  <span>{game.genre}</span>
+                  <strong>Дата выхода:</strong>
+                  <span>{formatDate(game.releaseDate)}</span>
                 </div>
               )}
 
-              {game.publisher && (
+              {game.platform && (
                 <div className="meta-item">
-                  <strong>Издатель:</strong>
-                  <span>{game.publisher}</span>
+                  <strong>Платформа:</strong>
+                  <span>{game.platform}</span>
                 </div>
               )}
 
@@ -152,17 +172,10 @@ function GameDetail() {
                 </div>
               )}
 
-              {game.releaseDate && (
+              {game.publisher && (
                 <div className="meta-item">
-                  <strong>Дата выхода:</strong>
-                  <span>{new Date(game.releaseDate).toLocaleDateString('ru-RU')}</span>
-                </div>
-              )}
-
-              {game.platform && (
-                <div className="meta-item">
-                  <strong>Платформа:</strong>
-                  <span>{game.platform}</span>
+                  <strong>Издатель:</strong>
+                  <span>{game.publisher}</span>
                 </div>
               )}
             </div>
@@ -180,14 +193,30 @@ function GameDetail() {
 
             <button
               onClick={handleAddToCart}
-              disabled={addingToCart || !game || isGameInCart}
-              className={`btn w-100 add-to-cart-btn-large ${isGameInCart ? 'in-cart' : ''}`}
+              disabled={addingToCart || !game || isGameInCart || !isAuthenticated()}
+              className={`add-to-cart-btn-large ${isGameInCart ? 'in-cart' : ''}`}
             >
-              {addingToCart ? 'Добавление...' : isGameInCart ? 'В корзине' : 'Добавить в корзину'}
+              {addingToCart ? (
+                <>
+                  <span className="material-icons">hourglass_empty</span>
+                  Добавление...
+                </>
+              ) : isGameInCart ? (
+                <>
+                  <span className="material-icons">check_circle</span>
+                  В корзине
+                </>
+              ) : (
+                <>
+                  <span className="material-icons">shopping_cart</span>
+                  Добавить в корзину
+                </>
+              )}
             </button>
 
-            {!isAuthenticated && (
-              <p style={{ color: '#ff6b6b', textAlign: 'center', marginTop: '1rem' }}>
+            {!isAuthenticated() && (
+              <p className="login-warning">
+                <span className="material-icons">warning</span>
                 Войдите в систему для добавления в корзину
               </p>
             )}
@@ -195,170 +224,41 @@ function GameDetail() {
         </div>
       </div>
 
-      <style jsx="true">{`
-        .game-detail-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 2rem;
-          align-items: start;
-        }
+      {/* Дополнительная информация (опционально) */}
+      {(game.developer || game.publisher || game.genre) && (
+        <div className="card mt-4">
+          <h3 className="mb-3">Детали игры</h3>
+          <div className="game-specs-grid">
+            {game.developer && (
+              <div className="spec-item">
+                <span className="spec-label">Разработчик</span>
+                <span className="spec-value">{game.developer}</span>
+              </div>
+            )}
 
-        .game-detail-image {
-          width: 100%;
-          height: 400px;
-          object-fit: cover;
-          border-radius: 8px;
-        }
+            {game.publisher && (
+              <div className="spec-item">
+                <span className="spec-label">Издатель</span>
+                <span className="spec-value">{game.publisher}</span>
+              </div>
+            )}
 
-        .discount-badge-large {
-          position: absolute;
-          top: 15px;
-          right: 15px;
-          background: #ff4444;
-          color: white;
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          font-size: 1rem;
-          font-weight: bold;
-        }
+            {game.genre && (
+              <div className="spec-item">
+                <span className="spec-label">Основной жанр</span>
+                <span className="spec-value">{game.genre}</span>
+              </div>
+            )}
 
-        .game-detail-title {
-          font-size: 2rem;
-          color: #00ff88;
-          margin-bottom: 1rem;
-          line-height: 1.2;
-        }
-
-        .game-detail-description {
-          color: #cccccc;
-          line-height: 1.6;
-          margin-bottom: 2rem;
-          font-size: 1.1rem;
-        }
-
-        .game-detail-meta {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          margin-bottom: 2rem;
-        }
-
-        .meta-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0.75rem 0;
-          border-bottom: 1px solid #333;
-        }
-
-        .meta-item strong {
-          color: #00ff88;
-        }
-
-        .meta-item span {
-          color: #ffffff;
-        }
-
-        .game-detail-price-section {
-          margin-bottom: 2rem;
-          text-align: center;
-        }
-
-        .discount-prices-large {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 1rem;
-          margin-bottom: 1rem;
-        }
-
-        .original-price-large {
-          text-decoration: line-through;
-          color: #888;
-          font-size: 1.5rem;
-        }
-
-        .current-price-large {
-          color: #00ff88;
-          font-size: 2.5rem;
-          font-weight: bold;
-        }
-
-        .add-to-cart-btn-large {
-          padding: 1rem 2rem;
-          font-size: 1.1rem;
-          background: #00ff88;
-          color: #000;
-          border: none;
-          font-weight: bold;
-          transition: all 0.3s ease;
-        }
-
-        .add-to-cart-btn-large:hover:not(:disabled) {
-          background: #00cc6a;
-          transform: translateY(-2px);
-        }
-
-        .add-to-cart-btn-large:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .add-to-cart-btn-large.in-cart {
-          background: #666;
-          color: #ccc;
-        }
-
-        @media (max-width: 1024px) {
-          .game-detail-grid {
-            gap: 1.5rem;
-          }
-
-          .game-detail-image {
-            height: 350px;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .game-detail-grid {
-            grid-template-columns: 1fr;
-            gap: 1rem;
-          }
-
-          .game-detail-image {
-            height: 300px;
-          }
-
-          .game-detail-title {
-            font-size: 1.5rem;
-          }
-
-          .current-price-large {
-            font-size: 2rem;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .game-detail-image {
-            height: 250px;
-          }
-
-          .meta-item {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.25rem;
-          }
-
-          .game-detail-title {
-            font-size: 1.3rem;
-          }
-
-          .add-to-cart-btn-large {
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
-          }
-        }
-      `}</style>
+            {game.platform && (
+              <div className="spec-item">
+                <span className="spec-label">Платформа</span>
+                <span className="spec-value">{game.platform}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

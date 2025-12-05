@@ -5,6 +5,7 @@ import GameCard from './GameCard';
 
 function GameList() {
   const [games, setGames] = useState([]);
+  const [allGames, setAllGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
@@ -18,37 +19,60 @@ function GameList() {
     { value: 'STRATEGY', label: 'Стратегия' },
     { value: 'ADVENTURE', label: 'Приключения' },
     { value: 'SIMULATION', label: 'Симулятор' },
-    { value: 'SPORTS', label: 'Спорт' }
+    { value: 'SPORTS', label: 'Спорт' },
+    { value: 'RACING', label: 'Гонки' },
+    { value: 'HORROR', label: 'Хоррор' }
   ];
 
   const loadGames = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
+      const gamesData = await gameService.getAllGames();
+      setAllGames(gamesData);
 
-      let gamesData;
-      if (selectedGenre) {
-        gamesData = await gameService.getGamesByGenre(selectedGenre);
-      } else if (searchQuery) {
-        gamesData = await gameService.searchGames(searchQuery);
-      } else {
-        gamesData = await gameService.getAllGames();
-      }
-
-      setGames(gamesData);
+      // Применяем текущие фильтры
+      applyFilters(gamesData, searchQuery, selectedGenre);
     } catch (error) {
-      setError('Ошибка загрузки игр. Проверьте подключение к серверу.');
-      console.error('Error loading games:', error);
+      setError('Ошибка загрузки игр.');
+      setAllGames([]);
+      setGames([]);
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedGenre]);
+  }, []);
+
+  const applyFilters = (gamesData, query = searchQuery, genre = selectedGenre) => {
+    let filteredGames = [...gamesData];
+
+    // Фильтрация по жанру
+    if (genre) {
+      filteredGames = filteredGames.filter(game =>
+        game.genres?.includes(genre) || game.genre === genre
+      );
+    }
+
+    // Фильтрация по поисковому запросу
+    if (query.trim()) {
+      const lowerQuery = query.toLowerCase();
+      filteredGames = filteredGames.filter(game =>
+        game.title.toLowerCase().includes(lowerQuery) ||
+        (game.description && game.description.toLowerCase().includes(lowerQuery))
+      );
+    }
+
+    setGames(filteredGames);
+  };
 
   useEffect(() => {
-    // Обработка query параметров из URL
     const searchFromUrl = searchParams.get('search');
+    const genreFromUrl = searchParams.get('genre');
+
     if (searchFromUrl) {
       setSearchQuery(searchFromUrl);
+    }
+    if (genreFromUrl) {
+      setSelectedGenre(genreFromUrl);
     }
   }, [searchParams]);
 
@@ -56,34 +80,61 @@ function GameList() {
     loadGames();
   }, [loadGames]);
 
-  const handleSearch = async (e) => {
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
+
     if (searchQuery.trim()) {
       setSearchParams({ search: searchQuery });
     } else {
-      setSearchParams({});
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('search');
+      setSearchParams(newParams);
     }
+
+    // Применяем фильтры ко всем загруженным играм
+    applyFilters(allGames);
+  };
+
+  const handleInputChange = (e) => {
+    setSearchQuery(e.target.value);
   };
 
   const handleGenreChange = (genre) => {
     setSelectedGenre(genre);
-    setSearchQuery('');
-    setSearchParams({});
+
+    if (genre) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('genre', genre);
+      if (searchQuery.trim()) {
+        newParams.set('search', searchQuery);
+      }
+      setSearchParams(newParams);
+    } else {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('genre');
+      if (searchQuery.trim()) {
+        newParams.set('search', searchQuery);
+      }
+      setSearchParams(newParams);
+    }
+
+    // Применяем фильтры ко всем загруженным играм
+    applyFilters(allGames, searchQuery, genre);
   };
 
   const handleReset = () => {
     setSearchQuery('');
     setSelectedGenre('');
     setSearchParams({});
+    setGames(allGames);
   };
 
   if (loading) {
     return (
       <div className="container">
-        <div className="loading">
-          <div className="text-center">
+        <div className="text-center padding-y-4">
+          <div className="loading">
             <h3>Загрузка игр...</h3>
-            <p style={{ color: '#cccccc' }}>Пожалуйста, подождите</p>
           </div>
         </div>
       </div>
@@ -94,7 +145,7 @@ function GameList() {
     return (
       <div className="container">
         <div className="text-center">
-          <div className="error-message" style={{ maxWidth: '500px', margin: '2rem auto' }}>
+          <div className="card max-w-500 mx-auto my-2">
             <h3>Ошибка</h3>
             <p>{error}</p>
             <button onClick={loadGames} className="btn mt-2">
@@ -110,74 +161,53 @@ function GameList() {
     <div className="container">
       <div className="text-center mb-4">
         <h1>Каталог игр</h1>
-        <p style={{ color: '#cccccc' }}>Откройте для себя лучшие видеоигры</p>
       </div>
 
-      {/* Поиск и фильтры */}
-      <div className="card mb-4" style={{ padding: '2rem' }}>
-        <form onSubmit={handleSearch} className="search-filters">
-          <div className="search-section" style={{ marginBottom: '1.5rem' }}>
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              alignItems: 'center',
-              flexWrap: 'wrap'
-            }}>
+      <div className="card mb-4 padding-2">
+        <form onSubmit={handleSearchSubmit} className="search-filters">
+          <div className="search-section mb-3">
+            <div className="search-bar">
               <input
                 type="text"
                 placeholder="Поиск игр по названию..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="form-input"
-                style={{ flex: '1', minWidth: '250px' }}
+                onChange={handleInputChange}
+                className="search-input"
               />
-              <button type="submit" className="btn">
+              <button type="submit" className="btn search-submit-btn">
                 Найти
               </button>
             </div>
           </div>
 
-          <div className="filters-section" style={{ marginBottom: '1.5rem' }}>
-            <div className="genre-filters">
-              <h4 style={{
-                marginBottom: '1rem',
-                color: 'var(--primary-color)',
-                fontSize: '1.1rem'
-              }}>
-                Фильтр по жанрам:
-              </h4>
-              <div className="genre-buttons">
-                {genres.map(genre => (
-                  <button
-                    key={genre.value}
-                    type="button"
-                    className={`genre-btn ${selectedGenre === genre.value ? 'active' : ''}`}
-                    onClick={() => handleGenreChange(genre.value)}
-                  >
-                    {genre.label}
-                  </button>
-                ))}
-              </div>
+          <div className="filter-section">
+            <h4>Фильтр по жанрам:</h4>
+            <div className="genre-buttons">
+              {genres.map(genre => (
+                <button
+                  key={genre.value}
+                  type="button"
+                  className={`genre-btn ${selectedGenre === genre.value ? 'active' : ''}`}
+                  onClick={() => handleGenreChange(genre.value)}
+                >
+                  {genre.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="actions-section">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="btn btn-secondary"
-            >
-              Сбросить все
+          <div className="actions-section mt-3">
+            <button type="button" onClick={handleReset} className="btn btn-secondary">
+              Сбросить фильтры
             </button>
           </div>
         </form>
       </div>
 
-      {/* Информация о результатах */}
       {(searchQuery || selectedGenre) && (
         <div className="card mb-4">
-          <div className="results-info" style={{ padding: '1rem 1.5rem' }}>
-            <p style={{ margin: 0 }}>
+          <div className="results-info">
+            <p>
               Найдено игр: <strong>{games.length}</strong>
               {searchQuery && ` по запросу "${searchQuery}"`}
               {selectedGenre && ` в жанре "${genres.find(g => g.value === selectedGenre)?.label}"`}
@@ -186,7 +216,6 @@ function GameList() {
         </div>
       )}
 
-      {/* Сетка игр */}
       {games.length > 0 ? (
         <div className="games-grid">
           {games.map(game => (
@@ -195,18 +224,8 @@ function GameList() {
         </div>
       ) : (
         <div className="text-center">
-          <div className="card" style={{
-            maxWidth: '400px',
-            margin: '2rem auto',
-            padding: '2rem'
-          }}>
+          <div className="card max-w-400 mx-auto my-2 padding-2">
             <h3>Игры не найдены</h3>
-            <p style={{ color: '#cccccc', marginBottom: '1rem' }}>
-              {searchQuery || selectedGenre
-                ? 'Попробуйте изменить параметры поиска'
-                : 'В каталоге пока нет игр'
-              }
-            </p>
             {(searchQuery || selectedGenre) && (
               <button onClick={handleReset} className="btn">
                 Показать все игры
@@ -215,78 +234,6 @@ function GameList() {
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        .search-filters {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .genre-buttons {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-        }
-
-        .genre-btn {
-          padding: 0.5rem 1rem;
-          border: 2px solid #333;
-          background: #2a2a2a;
-          color: var(--text-light);
-          border-radius: 20px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          font-size: 0.9rem;
-        }
-
-        .genre-btn:hover {
-          border-color: var(--primary-color);
-        }
-
-        .genre-btn.active {
-          background: var(--primary-color);
-          color: var(--background-dark);
-          border-color: var(--primary-color);
-        }
-
-        .games-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: 1.5rem;
-          width: 100%;
-        }
-
-        /* Адаптивность */
-        @media (max-width: 768px) {
-          .games-grid {
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1rem;
-          }
-
-          .search-section > div {
-            flex-direction: column;
-          }
-
-          .search-section .form-input {
-            min-width: auto;
-            width: 100%;
-          }
-
-          .genre-buttons {
-            justify-content: center;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .games-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .card {
-            padding: 1rem;
-          }
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,40 +1,62 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function Home() {
+  const navigate = useNavigate();
+
+  const handleCategoryClick = (genre) => {
+    navigate(`/games?genre=${genre}`);
+  };
+
+  const categories = [
+    { name: 'Экшен', genre: 'ACTION' },
+    { name: 'RPG', genre: 'RPG' },
+    { name: 'Гонки', genre: 'RACING' },
+    { name: 'Стратегия', genre: 'STRATEGY' }
+  ];
+
   return (
     <div className="container">
-      <section className="text-center" style={{ padding: '4rem 1rem' }}>
-        <div className="card" style={{
-          background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
-          border: '2px solid #00ff88',
-          maxWidth: '600px',
-          margin: '0 auto',
-          padding: '3rem 2rem'
-        }}>
-          <h1 style={{
-            fontSize: '2.5rem',
-            marginBottom: '1rem',
-            background: 'linear-gradient(45deg, #00ff88, #66ffb3)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>
-            Добро пожаловать в ZenGame
-          </h1>
-          <p style={{
-            fontSize: '1.2rem',
-            color: '#cccccc',
-            marginBottom: '2rem',
-            lineHeight: '1.6'
-          }}>
-            Лучшие видеоигры для всех платформ — легко, удобно, выгодно.
-          </p>
-          <Link to="/games" className="btn" style={{
-            fontSize: '1.1rem',
-            padding: '1rem 2rem'
-          }}>
-            Смотреть каталог
+      <section className="hero">
+        <h1 className="hero-title">Level Up Your Gaming Experience</h1>
+        <p className="hero-subtitle">
+          Откройте для себя тысячи игр на всех платформах. Мгновенная доставка, лучшие цены, эксклюзивные предложения.
+        </p>
+
+        <div className="flex-center gap-2">
+          <Link to="/games" className="btn">
+            Смотреть игры
           </Link>
+        </div>
+
+        <div className="hero-stats">
+          <div className="stat">
+            <span className="stat-number">5000+</span>
+            <span className="stat-label">Игр</span>
+          </div>
+          <div className="stat">
+            <span className="stat-number">50+</span>
+            <span className="stat-label">Жанров</span>
+          </div>
+          <div className="stat">
+            <span className="stat-number">24/7</span>
+            <span className="stat-label">Поддержка</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="categories-section">
+        <h2 className="text-center mb-4">Популярные категории</h2>
+        <div className="categories-grid">
+          {categories.map((category) => (
+            <button
+              key={category.genre}
+              className="category-btn"
+              onClick={() => handleCategoryClick(category.genre)}
+            >
+              {category.name}
+            </button>
+          ))}
         </div>
       </section>
     </div>
